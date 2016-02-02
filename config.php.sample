@@ -1,0 +1,34 @@
+<?php
+
+//Configuration for H.264 Batch Converter
+
+
+//Scratch folder - files in-progress will be stored here as they are converted
+$config['dir']['scratch'] = "/tmp/";
+
+//Move original files to a "junkyard" to be manually deleted after review
+//If disabled, source files will be deleted as they are converted
+$config['keepInJunkyard'] = true;
+
+//Folder for junkyard
+$config['dir']['junkyard'] = "/media/converted-sources/";
+
+//Conversion speed preset for FFMPEG - slower is better compression (doesn't affect quality, just speed and file size)
+//See: https://trac.ffmpeg.org/wiki/Encode/H.264
+$config['speed'] = "slow";
+
+//Conversion quality for H.264 and AAC - defaults don't visually or audibly degrade blu-ray to my judgement - but this is very subjective
+//See: https://trac.ffmpeg.org/wiki/Encode/H.264
+$config['videoQuality'] = "21";
+$config['audioQuality'] = "6";
+
+//Dont actually do any conversion, moving or deleting - just output the commands that would be run
+$config['test'] = false;
+
+//Pusbullet e-mail address for notifications (blank to disable)
+$config['pushBulletEmail'] = "";
+
+//Pushbullet API key
+$config['pushBulletApiKey'] = "";
+
+?>

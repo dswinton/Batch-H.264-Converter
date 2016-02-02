@@ -1,0 +1,154 @@
+#!/usr/bin/php5
+<?php
+
+/*
+
+Batch H.264 Converter
+
+Copyright 2016 David Swinton
+Licensed under GNU GPL v3
+
+*/
+
+
+require_once('config.php');
+require_once('lib-mediainfo.php');
+
+$dirPath = $argv[1];
+
+$fileTypes = array('mkv','avi','mp4','divx','m4v','mov','mpg','wmv');
+
+function logLine($msg){
+	echo $msg."\n";
+	syslog(LOG_INFO,'H.264 Converter: '.$msg);
+};
+
+function notify($title,$msg){
+		global $config;
+		
+		if($config['pushBulletEmail']){
+			$postFields = array(
+				"email" => $config['pushBulletEmail'],
+				"type" => "note",
+				"title" => $title,
+				"body" => $msg,
+				"sender_name" => "H.264 Converter"
+			);
+
+			$curl = curl_init('https://api.pushbullet.com/v2/pushes');
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_POST, true);
+			curl_setopt($curl, CURLOPT_HTTPHEADER, ['Authorization: Bearer '.$config['pushBulletApiKey']]);
+			curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+			return curl_exec($curl);
+		};
+};
+
+
+$dirListing = scandir($dirPath);
+
+foreach($dirListing as $d){
+	$doConvert = false;
+	$matchStr = strtolower(substr($d,strlen($d)-3,3));
+	if(in_array($matchStr,$fileTypes)){
+		$dPath = ($dirPath.$d);
+		logLine('=== '.$dPath.' ===');
+		$mediaInfo = new mediaInfo($dPath);
+		$mediaInfo = json_decode(json_encode($mediaInfo),true);
+		//print_r($mediaInfo);
+		
+		//Decision points as to whether we will convert
+			
+			//Check video format
+			if($mediaInfo['arrGeneral']['Format'] <> "MPEG-4"){
+				logLine('ISSUE: Container is not MPEG4 ('.$mediaInfo['arrGeneral']['Format'].')');
+				$doConvert = true;
+			};
+			
+			//Check video codec
+			if($mediaInfo['arrVideo']['Format'] <> "AVC"){
+				logLine('ISSUE: Video codec is not AVC/H.264 ('.$mediaInfo['arrVideo']['Format'].')');
+				$doConvert = true;
+			};
+			
+			//Check audio codec
+			$audio = $mediaInfo['arrAudio'];
+			reset($audio);
+			$firstAudioKey = key($audio);
+			if($mediaInfo['arrAudio'][$firstAudioKey]['Format'] <> "AAC"){
+				logLine('ISSUE: Audio codec is not AAC ('.$mediaInfo['arrAudio'][$firstAudioKey]['Format'].')');
+				$doConvert = true;
+			};
+			
+			//Need to check what it looks like with multiple tracks / languages
+			if(count($mediaInfo['arrAudio']) > 1){
+				logLine('NOPE: More than one audio track');
+				$doConvert = false;
+				print_r($mediaInfo);
+				exit;
+			};
+			
+			//Deal with packaging subtitles
+			if(count($mediaInfo['arrText'])){
+				//TODO:  Remove non-english subtitles
+				//Currently subtitles will be included as MOV_TEXT so you can turn them on and off
+				//Probably will never get written as there's little benifit to removing others
+			};
+	
+	
+		//Do it
+		if($doConvert){
+			$sourceFile = $mediaInfo['arrGeneral']['Complete name'];
+			$src = pathinfo($sourceFile);
+			$hash = md5($sourceFile);
+			
+			$workingFile = $config['dir']['scratch'].$hash.'.mp4';
+			$destFile = $src['dirname'] . '/' . $src['filename'] . '.mp4';
+			
+			logLine('Source: '.$sourceFile);
+			logLine('Scratch: '.$workingFile);
+			logLine('Dest: '.$destFile);
+			
+			$timeStart = time();
+			
+			$ffCmd = 'ffmpeg -i "'.$sourceFile.'" -c:v libx264 -crf '.$config['videoQuality'].' -preset '.$config['speed'].' -c:a aac -q:a '.$config['audioQuality'].' -c:s mov_text -movflags +faststart -strict -2 "'.$workingFile.'"';
+			logLine('Running command: '.$ffCmd);
+			if(!$config['test']){exec($ffCmd);};
+			
+			
+			if($config['keepInJunkyard']){
+				logLine('Moving the original source to the junkyard...');
+				$junkFile = $config['dir']['junkyard'] . $src['basename'];
+				$junkCmd = 'mv "'.$sourceFile. '" "'.$junkFile.'"';
+				logLine($junkCmd);
+				if(!$config['test']){exec($junkCmd);};
+			}else{
+				logLine('Deleting original...');
+				$junkFile = $config['dir']['junkyard'] . $src['basename'];
+				$rmCmd = 'rm "'.$sourceFile. '"';
+				logLine($rmCmd);
+				if(!$config['test']){exec($rmCmd);};
+			};
+			
+			logLine('Moving converted file into place of original...');
+			$moveCmd = 'mv "'.$workingFile. '" "'.$destFile.'"';
+			logLine($moveCmd);
+			if(!$config['test']){exec($moveCmd);};
+			
+			$timeTaken = time() - $timeStart;
+			
+			notify('Conversion finished',$src['filename'].' ['.round($timeTaken/60).' minutes]');
+			
+		}else{
+			logLine('Not converting this file');
+		};
+		
+	};
+	
+};
+
+
+
+?>

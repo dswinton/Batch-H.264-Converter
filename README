@@ -1,0 +1,44 @@
+Batch H.264 Converter
+===========================
+
+Point it a folder of video files (supports any source media that FFMPEG does).
+
+It will scan through a directory and convert any video files to the following:
+- .MP4 container (although .mkv is arguably a better continer - .mp4 is the most widely compattible)
+- H.264 video codec (the most widely supported video codec on modern media players / smart tv's / etc.)
+- AAC audio (as with H.264, widely supported and good quality)
+
+Designed to work with existing libraries in media servers such as Plex Media Server.
+The covnerter will automatically skip anything that's already in the desired format, or that it doesn't understand.
+Supports PushBullet notifications.
+
+
+INSTALLATION
+
+1. Install the pre-requisites
+apt-get install php5 php5-curl mediainfo ffmpeg
+
+2. Slurp it down with GIT
+git clone https://github.com/dswinton/Batch-H.264-Converter.git
+
+
+
+USAGE
+
+Before using - open config.php and customise to your liking.  
+Note that at a minimum you'll need to customise the scratch and junkyard folders for this tool to work (it comes set up for my environment, which probably won't work for you.
+
+After customising your configuration, sinply point it at a directory, then be very, very patient...
+batch-h264-converter /folder/of/videos/
+
+I personally recommend running this converter using screen - so you can close your terminal window and come back to it later...
+screen -R conveter
+batch-h264-converter /folder/of/videos/
+
+
+
+CREDITS
+
+Uses PHP library for interpreting Mediainfo command output by Gianlucca Zanferrari:
+http://www.phpclasses.org/package/7788-PHP-Retrieve-the-details-of-video-files-with-mediainfo.html
+- Note that this was modified from the source to handle multiple audio channels and subtitles
