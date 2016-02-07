@@ -113,7 +113,14 @@ foreach($dirListing as $d){
 			
 			$timeStart = time();
 			
-			$ffCmd = 'ffmpeg -i "'.$sourceFile.'" -c:v libx264 -crf '.$config['videoQuality'].' -preset '.$config['speed'].' -c:a aac -q:a '.$config['audioQuality'].' -c:s mov_text -movflags +faststart -strict -2 "'.$workingFile.'"';
+			$ffCmd  = 'ffmpeg -i "'.$sourceFile.'" -c:v libx264 -crf '.$config['videoQuality'];
+			
+			//H.264 quality setting - suggested by @jmckee on the Plex forums
+			if($config['h264Level']){
+				$ffCmd .= ' -level '.$config['h264Level'].' ';
+			}
+			
+			$ffCmd .= ' -preset '.$config['speed'].' -c:a aac -q:a '.$config['audioQuality'].' -c:s mov_text -movflags +faststart -strict -2 "'.$workingFile.'"';
 			logLine('Running command: '.$ffCmd);
 			if(!$config['test']){exec($ffCmd);};
 			

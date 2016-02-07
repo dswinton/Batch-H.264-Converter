@@ -20,6 +20,7 @@ $config['speed'] = "slow";
 //Conversion quality for H.264 and AAC - defaults don't visually or audibly degrade blu-ray to my judgement - but this is very subjective
 //See: https://trac.ffmpeg.org/wiki/Encode/H.264
 $config['videoQuality'] = "21";
+$config['h264Level'] = "4.0";
 $config['audioQuality'] = "6";
 
 //Dont actually do any conversion, moving or deleting - just output the commands that would be run
