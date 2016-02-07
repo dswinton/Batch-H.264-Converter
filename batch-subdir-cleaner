@@ -1,0 +1,73 @@
+#!/usr/bin/php5
+<?php
+
+/*
+
+Batch Subdir Mover
+Fixes the old ShowName/Showname/Season 1 problem without interfering with any Season folders in the shows top-level folder
+
+Copyright 2016 David Swinton
+Licensed under GNU GPL v3
+
+*/
+
+
+require_once('config.php');
+require_once('lib-mediainfo.php');
+
+$dirPath = $argv[1];
+
+function logLine($msg){
+	echo $msg."\n";
+	syslog(LOG_INFO,'H.264 Converter: '.$msg);
+};
+
+function runCmd($cmd){
+	logLine('Running: '.$cmd);
+	exec($cmd);
+};
+
+function notify($title,$msg){
+		global $config;
+		
+		if($config['pushBulletEmail']){
+			$postFields = array(
+				"email" => $config['pushBulletEmail'],
+				"type" => "note",
+				"title" => $title,
+				"body" => $msg,
+				"sender_name" => "H.264 Converter"
+			);
+
+			$curl = curl_init('https://api.pushbullet.com/v2/pushes');
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_POST, true);
+			curl_setopt($curl, CURLOPT_HTTPHEADER, ['Authorization: Bearer '.$config['pushBulletApiKey']]);
+			curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+			return curl_exec($curl);
+		};
+};
+
+
+$dirListing = scandir($dirPath);
+
+foreach($dirListing as $td){
+
+	if(is_dir($dirPath.$td) && $td <> "." && $td <> ".."){
+        	$fullShowPath = $dirPath.$td;
+        	$subPath = $dirPath.$td.'/'.$td;
+
+		if(is_dir($subPath)){
+			logLine('Found affected show: '.$td);
+		
+			runCmd('rsync -av --remove-source-files "' . $subPath . '/" "' . $fullShowPath . '/"');
+			runCmd('rmdir ' . escapeshellarg($subPath) . '/*');
+			runCmd('rmdir ' . escapeshellarg($subPath));
+		};
+	};
+
+};
+
+?>
