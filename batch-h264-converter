@@ -118,7 +118,12 @@ foreach($dirListing as $d){
 			//H.264 quality setting - suggested by @jmckee on the Plex forums
 			if($config['h264Level']){
 				$ffCmd .= ' -level '.$config['h264Level'].' ';
-			}
+			};
+			
+			//Add totally customised arguments to the FFMPEG command
+			if($config['customFfmpegArgs']){
+				$ffCmd .= ' '.$config['customFfmpegArgs'].' ';
+			};
 			
 			$ffCmd .= ' -preset '.$config['speed'].' -c:a aac -q:a '.$config['audioQuality'].' -c:s mov_text -movflags +faststart -strict -2 "'.$workingFile.'"';
 			logLine('Running command: '.$ffCmd);

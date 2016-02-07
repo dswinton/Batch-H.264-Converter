@@ -23,6 +23,9 @@ $config['videoQuality'] = "21";
 $config['h264Level'] = "4.0";
 $config['audioQuality'] = "6";
 
+//Add custom parameters to the FFMPEG command
+//$config['customFfmpegArgs'] = '-af "volume=5dB"';
+
 //Dont actually do any conversion, moving or deleting - just output the commands that would be run
 $config['test'] = false;
 
