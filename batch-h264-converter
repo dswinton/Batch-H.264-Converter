@@ -1,4 +1,4 @@
-#!/usr/bin/php5
+#!/usr/bin/php
 <?php
 
 /*
@@ -11,17 +11,27 @@ Licensed under GNU GPL v3
 */
 
 
+function logLine($msg){
+        echo $msg."\n";
+        syslog(LOG_INFO,'H.264 Converter: '.$msg);
+};
+
+logLine('Batch H.264 Converter Started');
+
 require_once('config.php');
 require_once('lib-mediainfo.php');
 
 $dirPath = $argv[1];
 
+if(!$dirPath){
+	logLine('Error - directory not specified.');
+	exit;
+};
+
+logLine('Directory is: '.$dirPath);
+
 $fileTypes = array('mkv','avi','mp4','divx','m4v','mov','mpg','wmv');
 
-function logLine($msg){
-	echo $msg."\n";
-	syslog(LOG_INFO,'H.264 Converter: '.$msg);
-};
 
 function notify($title,$msg){
 		global $config;
@@ -47,7 +57,10 @@ function notify($title,$msg){
 };
 
 
+logLine('Scanning Directory...');
 $dirListing = scandir($dirPath);
+logLine('Scan complete.  Starting conversion run...');
+
 
 foreach($dirListing as $d){
 	$doConvert = false;
@@ -161,6 +174,6 @@ foreach($dirListing as $d){
 	
 };
 
-
+logLine('Run complete!');
 
 ?>
